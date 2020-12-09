@@ -162,7 +162,8 @@ process f (Record k v) = do
   print v
   return $ Continue $ Record k (f v)
 
-join1 :: ([Record R1], [Record R2]) -> IO (Guard (Record [(Int, Int, Int, Int)]))
+-- join1 :: ([Record R1], [Record R2]) -> IO (Guard (Record [(Int, Int, Int, Int)]))
+join1 :: (Monad m, Foldable t) => (t (Record R1), [Record R2]) -> m (Guard (Record [(Int, Int, Int, Int)]))
 join1 (ls, rs) = return $ Continue $ Record "join" $ concatMap findv ls
   where
     findv (Record _ l) =
@@ -203,4 +204,8 @@ creatIORef :: IORef (TVar Bool, Cache v v1)
 creatIORef  = unsafePerformIO $ do 
     tvbool <- newTVarIO False
     newIORef  (tvbool, ([],[]))
+
+
+
+
 

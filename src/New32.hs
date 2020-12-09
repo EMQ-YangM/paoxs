@@ -25,7 +25,6 @@ data R2 = R2
   }
   deriving (Show, Eq)
 
-
 csour _  = return $ Continue $ Record "1" $ R1 1 20
 
 filter1 r@(Record _ (R1 _ b)) = 
@@ -47,7 +46,7 @@ t6 = [q|
 
 m1 :: IO ()
 m1 = do
-  forM_ (concat $ replicate 800 [Record "r1" ""]) $
+  forM_ (concat $ replicate 800 [Record "r1" 1]) $
     \v -> do
       threadDelay 10000
       runFS v t6
