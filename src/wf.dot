@@ -1,0 +1,18 @@
+digraph test{
+a -> {test,l,f,e,d,c}
+b -> {m,k,d,c}
+c -> {m,d,sink}
+d -> {j,sink}
+e -> {s,k}
+f -> {b}
+j -> {sink}
+k -> {x,sink}
+l -> {b}
+m -> {d,sink}
+s -> {k,m}
+sink -> {}
+source -> {k,e,b,a}
+test -> {b}
+x -> {j}
+
+}

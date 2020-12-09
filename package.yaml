@@ -1,0 +1,85 @@
+name:                paxos
+version:             0.1.0.0
+github:              "https://github.com/EMQ-YangM/paoxs"
+license:             BSD3
+author:              "EMQ-YangM"
+maintainer:          "yangm@emqx.io"
+copyright:           "2020 Author name here"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/EMQ-YangM/paxos#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- containers
+- random
+- time
+- async
+- reanimate
+- mtl
+- transformers
+- simple-sql-parser
+- aeson
+- text
+- cassava
+- aeson-pretty
+- http-conduit
+- unordered-containers
+- vector
+- bytestring
+- singleton-nats
+- conduit
+- singletons
+- ghc-typelits-natnormalise
+- shelly
+- random
+- serialise
+- th-abstraction
+- avro
+- template-haskell
+- binary
+- pretty-show
+- vector
+- fused-effects
+- fused-effects-lens
+- lens
+- microlens-mtl
+- microlens-th
+- optics
+- optics-th
+
+library:
+  source-dirs: src
+
+executables:
+  paxos-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -O2
+    - -with-rtsopts=-N
+    dependencies:
+    - paxos
+
+tests:
+  paxos-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - paxos

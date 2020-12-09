@@ -1,0 +1,206 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: eec67fe7d945ab3bbf6ba1c0d1518bdedf31e681545187388f8a2cabe73507aa
+
+name:           paxos
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/EMQ-YangM/paxos#readme>
+homepage:       https://github.com/https://github.com/EMQ-YangM/paoxs#readme
+bug-reports:    https://github.com/https://github.com/EMQ-YangM/paoxs/issues
+author:         EMQ-YangM
+maintainer:     yangm@emqx.io
+copyright:      2020 Author name here
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/https://github.com/EMQ-YangM/paoxs
+
+library
+  exposed-modules:
+      Animate
+      Dynamic
+      New
+      New1
+      New10
+      New11
+      New13
+      New14
+      New15
+      New16
+      New17
+      New18
+      New19
+      New2
+      New20
+      New21
+      New22
+      New23
+      New24
+      New25
+      New26
+      New28
+      New29
+      New3
+      New30
+      New31
+      New32
+      New33
+      New4
+      New5
+      New6
+      New7
+      New8
+      New9
+      Paxos
+      Scheam
+      Scheam1
+      Sin
+      Sin1
+      Sql
+      Timer
+      TinyServant
+      Worker
+  other-modules:
+      Paths_paxos
+  hs-source-dirs:
+      src
+  build-depends:
+      aeson
+    , aeson-pretty
+    , async
+    , avro
+    , base >=4.7 && <5
+    , binary
+    , bytestring
+    , cassava
+    , conduit
+    , containers
+    , fused-effects
+    , fused-effects-lens
+    , ghc-typelits-natnormalise
+    , http-conduit
+    , lens
+    , microlens-mtl
+    , microlens-th
+    , mtl
+    , optics
+    , optics-th
+    , pretty-show
+    , random
+    , reanimate
+    , serialise
+    , shelly
+    , simple-sql-parser
+    , singleton-nats
+    , singletons
+    , template-haskell
+    , text
+    , th-abstraction
+    , time
+    , transformers
+    , unordered-containers
+    , vector
+  default-language: Haskell2010
+
+executable paxos-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_paxos
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -O2 -with-rtsopts=-N
+  build-depends:
+      aeson
+    , aeson-pretty
+    , async
+    , avro
+    , base >=4.7 && <5
+    , binary
+    , bytestring
+    , cassava
+    , conduit
+    , containers
+    , fused-effects
+    , fused-effects-lens
+    , ghc-typelits-natnormalise
+    , http-conduit
+    , lens
+    , microlens-mtl
+    , microlens-th
+    , mtl
+    , optics
+    , optics-th
+    , paxos
+    , pretty-show
+    , random
+    , reanimate
+    , serialise
+    , shelly
+    , simple-sql-parser
+    , singleton-nats
+    , singletons
+    , template-haskell
+    , text
+    , th-abstraction
+    , time
+    , transformers
+    , unordered-containers
+    , vector
+  default-language: Haskell2010
+
+test-suite paxos-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_paxos
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , aeson-pretty
+    , async
+    , avro
+    , base >=4.7 && <5
+    , binary
+    , bytestring
+    , cassava
+    , conduit
+    , containers
+    , fused-effects
+    , fused-effects-lens
+    , ghc-typelits-natnormalise
+    , http-conduit
+    , lens
+    , microlens-mtl
+    , microlens-th
+    , mtl
+    , optics
+    , optics-th
+    , paxos
+    , pretty-show
+    , random
+    , reanimate
+    , serialise
+    , shelly
+    , simple-sql-parser
+    , singleton-nats
+    , singletons
+    , template-haskell
+    , text
+    , th-abstraction
+    , time
+    , transformers
+    , unordered-containers
+    , vector
+  default-language: Haskell2010

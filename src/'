@@ -1,0 +1,117 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE RankNTypes #-}
+
+module New27 where
+
+import Control.Monad.Reader
+import Data.Data (cast)
+import Data.Typeable (Typeable)
+
+data R 
+    = R {
+        temperature :: Int,
+        humidity :: Int
+    } deriving (Show, Eq)
+
+
+data R1 
+    = R1 {
+        rtemperature :: Int,
+        rhumidity :: Int
+    } deriving (Show, Eq)
+
+data Guard a 
+    = Continue a
+    | Skip
+    deriving (Show)
+
+data Record 
+    = forall k v. (Typeable k, Typeable v, Show k , Show v) => Record {
+        nrk :: k,
+        nrv :: v
+    }
+
+instance Show Record where
+    show (Record k v) = show k ++ "  " ++ show v
+
+data FS = FS (Record -> IO (Guard Record )) [FS]
+
+runFS :: Record -> FS -> IO ()
+runFS r (FS fun fs) = do
+    v1 <- fun r 
+    case v1 of 
+        Skip -> return ()
+        Continue v2 -> forM_ fs $ \f -> runFS v2 f
+
+t = Record "1" (R 13 34)
+
+source r = return $ Continue r
+
+filterProcess :: (Record -> Bool) -> Record -> IO (Guard Record)
+filterProcess fun r = do
+    if fun r 
+    then return $ Continue r
+    else return Skip
+
+pfilter :: Typeable t => (t -> Bool) -> Record -> IO (Guard Record)
+pfilter f = filterProcess 
+    (\(Record _ v) -> case cast v of 
+       Just v1 -> f v1
+       Nothing -> error "can't do this"
+    )
+
+process :: (Record -> Record) -> Record -> IO (Guard Record)
+process fun  r = return $ Continue $ fun r
+
+pprocess :: (Typeable a, Typeable b, Show b) => (a -> b) -> Record -> IO (Guard Record)
+pprocess fun = process 
+    (\(Record a v) -> case cast v of 
+        Just v1 -> Record a $ fun v1
+        Nothing -> error "cant't do this"
+    )
+
+check v (R a _) = a > v
+
+add1 (R a b) = R a (b+10001)
+
+sink r = print r >> return Skip
+myfs = FS source [ FS (pfilter $ check 10) [FS (pprocess add1) [FS sink []]] ,
+                   FS (pprocess add1) [FS sink []]  
+                 ]
+m1 = runFS t myfs
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
