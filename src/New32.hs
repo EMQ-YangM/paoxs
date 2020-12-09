@@ -8,28 +8,9 @@ module New32 where
 import Language.Haskell.TH
 import Language.Haskell.TH.Quote
 import New33
-import New31 (Fun, Cache, FS(..), runFS, Record(..), Guard(..), JoinFun, (:<))
+import New31 (addFuns, dealSink, addFun, addJoin, creatIORef, Fun, Cache, FS(..), runFS, Record(..), Guard(..), JoinFun, (:<))
 import Control.Monad
 import GHC.Conc
-import Data.IORef
-import GHC.IO (unsafePerformIO)
-
-dealSink = TE
-
-addFun :: Fun v v1 -> FS v1 -> FS v
-addFun f fs = FS f [fs]
-
-addFuns :: Fun v v1 -> [FS v1] -> FS v 
-addFuns = FS
-
-addJoin :: IORef (TVar Bool, Cache v v1) -> JoinFun v v1 v2 -> [FS [v2]] -> FS (v :< v1)
-addJoin  = TF
-
-{-# NOINLINE creatIORef #-}
-creatIORef :: IORef (TVar Bool, Cache v v1)
-creatIORef  = unsafePerformIO $ do 
-    tvbool <- newTVarIO False
-    newIORef  (tvbool, ([],[]))
 
 
 data R1 = R1
@@ -37,6 +18,13 @@ data R1 = R1
     r12 :: Int
   }
   deriving (Show, Eq)
+
+data R2 = R2
+  { r21 :: Int,
+    r22 :: Int
+  }
+  deriving (Show, Eq)
+
 
 csour _  = return $ Continue $ Record "1" $ R1 1 20
 

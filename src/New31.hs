@@ -36,6 +36,7 @@ import GHC.TypeLits
 import System.Random
 import Type.Reflection
 import Unsafe.Coerce
+import GHC.IO (unsafePerformIO)
 
 data R1 = R1
   { r11 :: Int,
@@ -184,3 +185,22 @@ m1 = do
     \v -> do
       threadDelay 10000
       runFS v (testFS ref)
+
+
+dealSink = TE
+
+addFun :: Fun v v1 -> FS v1 -> FS v
+addFun f fs = FS f [fs]
+
+addFuns :: Fun v v1 -> [FS v1] -> FS v 
+addFuns = FS
+
+addJoin :: IORef (TVar Bool, Cache v v1) -> JoinFun v v1 v2 -> [FS [v2]] -> FS (v :< v1)
+addJoin  = TF
+
+{-# NOINLINE creatIORef #-}
+creatIORef :: IORef (TVar Bool, Cache v v1)
+creatIORef  = unsafePerformIO $ do 
+    tvbool <- newTVarIO False
+    newIORef  (tvbool, ([],[]))
+
