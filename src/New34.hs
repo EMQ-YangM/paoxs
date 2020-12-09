@@ -11,10 +11,16 @@
 
 module New34 where
 
-import Control.Monad
-import Data.IORef
-import GHC.Conc
+import Control.Monad (forM_, when)
+import Data.IORef (IORef, readIORef, writeIORef)
+import GHC.Conc (TVar, readTVarIO, registerDelay)
 import System.IO
+  ( Handle,
+    SeekMode (AbsoluteSeek),
+    hGetLine,
+    hPutStr,
+    hSeek,
+  )
 
 data a :+ b
   = L a
@@ -22,8 +28,6 @@ data a :+ b
   deriving (Show)
 
 data a :* b = a :* b deriving (Show)
-
-dd1 = cache2 (R 1) (["nice"] :* [1])
 
 cache :: a -> [a] -> [a]
 cache a as = a : as
@@ -135,35 +139,3 @@ runProcess v (Process ref) = do
       writeIORef ref (newtvar, initCache, cache, cacheFun, fun, ps)
       v' <- fun cacheVal
       forM_ ps $ \p -> runProcess v' p
-
-data Person = Person
-  { name :: String,
-    age :: Int,
-    order :: Int
-  }
-  deriving (Show, Eq)
-
-initState :: IO (IORef Int)
-initState = newIORef 0
-
-testProcess :: Handle -> IORef Int -> Process Person
-testProcess handle ref =
-  Normal
-    return
-    [ Sink print,
-      -- use IORef backend
-      StateFun (ioRefBackendState ref) (\_ s -> return (s + 1, s + 1)) [Sink print],
-      -- use file backend
-      StateFun (fileBackendState handle) (\_ s -> return (s + 1, s + 1)) [Sink print]
-    ]
-
-m1 = do
-  withFile "test_stateFile.txt" ReadWriteMode $ \handle -> do
-    hSeek handle AbsoluteSeek 0 >> hPutStr handle (show 0)
-    ref <- initState
-    forM_ (concat $ replicate 100 [Person "wang" 23 2]) $
-      \v -> do
-        threadDelay 10000
-        runProcess v $ testProcess handle ref
-    print "close handle"
-    hClose handle
