@@ -25,9 +25,9 @@ import System.IO
 data a :+ b
   = L a
   | R b
-  deriving (Show)
+  deriving (Show, Read)
 
-data a :* b = a :* b deriving (Show)
+data a :* b = a :* b deriving (Show, Read)
 
 cache :: a -> [a] -> [a]
 cache a as = a : as
@@ -53,9 +53,36 @@ cache4 (L (R c)) (as :* bs :* cs :* ds) = as :* bs :* (c : cs) :* ds
 cache4 (L (L (R b))) (as :* bs :* cs :* ds) = as :* (b : bs) :* cs :* ds
 cache4 (L (L (L a))) (as :* bs :* cs :* ds) = (a : as) :* bs :* cs :* ds
 
+l21 :: Monad m => a -> m (a :+ b)
+l21 v = return $ L v
+
+l22 :: Monad m => b -> m (a :+ b)
+l22 v = return $ R v
+
+l31 :: Monad m => a -> m ((a :+ b1) :+ b2)
+l31 v = return $ L $ L v
+
+l32 :: Monad m => b1 -> m ((a :+ b1) :+ b2)
+l32 v = return $ L $ R v
+
+l33 :: Monad m => b -> m (a :+ b)
+l33 v = return $ R v
+
+l41 :: Monad m => a -> m (((a :+ b1) :+ b2) :+ b3)
+l41 v = return $ L $ L $ L v
+
+l42 :: Monad m => b1 -> m (((a :+ b1) :+ b2) :+ b3)
+l42 v = return $ L $ L $ R v
+
+l43 :: Monad m => b1 -> m ((a :+ b1) :+ b2)
+l43 v = return $ L $ R v
+
+l44 :: Monad m => b -> m (a :+ b)
+l44 v = return $ R v
+
 type family IC a where
-  IC (a :* b) = (IC a :+ b)
-  IC a = a
+  IC (a :* [b]) = (IC a :+ b)
+  IC [a] = a
 
 data State a = State
   { put :: a -> IO (),
@@ -94,6 +121,10 @@ type FilterFun input = input -> IO Bool
 
 type ChoiseFun input = input -> IO Int
 
+type Source output = IO output
+
+type Sink input = input -> IO ()
+
 data Process v where
   Normal :: NormalFun input output -> [Process output] -> Process input
   Choise :: ChoiseFun input -> [Process input] -> Process input
@@ -104,7 +135,32 @@ data Process v where
     IORef (TVar Bool, initCache, State cache, CacheFun input cache, NormalFun cache output, [Process output]) ->
     Process input
   Mutil :: IORef (Process input) -> Process input
-  Sink :: NormalFun input () -> Process input
+  Source :: Source output -> [Process output] -> Process ()
+  Sink :: Sink input -> Process input
+
+makeSpace :: Int -> String
+makeSpace i = replicate i ' '
+
+render :: Process v -> String
+render = render' "" 0
+
+isOne :: Int -> [Process v] -> String
+isOne i [p] = " " ++ render' "" i p
+isOne i ps = "\n" ++ concatMap (render' (makeSpace (i + 4)) (i + 4)) ps
+
+render' :: String -> Int -> Process v -> String
+render' s i (Normal _ ps) = s ++ "Normal ->" ++ isOne i ps
+render' s i (Choise _ ps) = s ++ "Choise ->" ++ isOne i ps
+render' s i (Filter _ ps) = s ++ "Filter ->" ++ isOne i ps
+render' s i (StateFun _ _ ps) = s ++ "StateFun ->" ++ isOne i ps
+render' s i (Process _) = s ++ "Process\n"
+render' s i (Mutil _) = s ++ "Mutil\n"
+render' s i (Source _ ps) = s ++ "Source ->" ++ isOne i ps
+render' s i (Sink _) = s ++ "Sink\n"
+
+run :: Process () -> IO ()
+run (Source fun ps) = fun >>= \v -> forM_ ps (runProcess v)
+run _ = error "this is not"
 
 runProcess :: v -> Process v -> IO ()
 runProcess v (Normal fun ps) = do
