@@ -21,7 +21,7 @@ import System.IO
 data Person = Person
   { name :: String,
     age :: Int,
-    id :: Int
+    pid :: Int
   }
   deriving (Show, Eq, Read)
 
@@ -47,25 +47,19 @@ choise (Record "order" _) = return 1
 decode :: Read a => Record String -> IO a
 decode (Record _ v) = return $ read v
 
-initCache :: [Person] :* [Order]
-initCache = [] :* []
-
-mkl :: v -> IO (v :+ v1)
-mkl v = return $ L v
-
-mkr :: v1 -> IO (v :+ v1)
-mkr v = return $ R v
+initCache :: [Person] :++ [Order]
+initCache = [] :++ []
 
 cacheFun = cache2
 
 pollRecord :: IORef Int -> IO (Record String)
 pollRecord ref = do
   v <- readIORef ref
+  modifyIORef' ref (+ 1)
   if even v
     then return $ Record "person" (show $ Person "yang" 23 10)
     else return $ Record "order" (show $ Order 1001 10)
 
-joinWork :: (IC cache ~ (Person :+ Order)) => IORef (TVar Bool, cache, State cache, CacheFun (Person :+ Order) cache, NormalFun cache output, [Process output]) -> Process (Record String)
 joinWork a =
   Choise
     choise
@@ -79,50 +73,58 @@ joinWork1 a =
     [ Normal (decode @Person) [Normal l41 [Process a]],
       Normal (decode @Order) [Normal l42 [Process a]],
       Normal (decode @Result) [Normal l43 [Process a]],
-      Normal (decode @Person) [Normal l44 [Process a]]
+      Normal (decode @Int) [Normal l44 [Process a]]
     ]
 
-joinWork2 ::
-  (IC cache ~ (Person :+ Order)) =>
-  IORef (TVar Bool, cache, State cache, CacheFun (Person :+ Order) cache, NormalFun cache output, [Process output]) ->
-  IORef Int ->
-  Process ()
 joinWork2 a b =
   Source
     (pollRecord b)
     [ Choise
         choise
         [ Normal (decode @Person) [Normal l21 [Process a]],
-          Normal (decode @Order) [Normal l22 [Process a]]        ],
+          Normal (decode @Order) [Normal l22 [Process a]]
+        ],
       Sink print
     ]
+
+joinFun :: [Person] :++ [Order] -> IO [Result]
+joinFun (ps :++ os) = return $ concatMap fun ps
+  where
+    fun p =
+      case filter (\v -> pid p == personId v) os of
+        [] -> []
+        x : _ -> [Result (name p) (age p) (order x)]
 
 initWork = do
   ref <- newIORef initCache
   tbool <- registerDelay 1000000
-  -- hSeek handle AbsoluteSeek 0 >> hPutStr handle (show initCache)
-  -- newIORef (tbool, initCache, fileBackendState handle, cacheFun, print, [])
-  newIORef (tbool, initCache, ioRefBackendState ref, cacheFun, print, [])
+  newIORef (tbool, initCache, ioRefBackendState ref, cacheFun, Normal joinFun [Sink print])
 
-main2 :: IO ()
-main2 = do 
-    ref <- initWork 
-    i <- newIORef 0
-    let work = joinWork2 ref i 
-    putStr $ render work 
-    forM_ [1..100] $ \_ -> do 
-        threadDelay 10000
-        run work
+main :: IO ()
+main = do
+  ref <- initWork
+  i <- newIORef 0
+  let work = joinWork2 ref i
+  putStrLn "\n---------- process depend ----------\n\n"
+  putStr $ render work
+  putStrLn "............ optimize later ............ \n"
+  let optWork = optimize work
+  putStr $ render optWork
+  forM_ [1 .. 2] $ \_ -> do
+    threadDelay 10000
+    run optWork
 
 main1 :: IO ()
 main1 = do
   ref <- initWork
   let work = joinWork ref
   putStrLn $ render work
+  putStrLn "............ optimize later ............ \n"
+  putStrLn $ render $ optimize work
   forM_
     ( concat $
         replicate
-          100
+          1
           [ Record "person" (show $ Person "yang" 23 10),
             Record "order" (show $ Order 1001 10)
           ]
@@ -138,22 +140,21 @@ testProcess :: Handle -> IORef Int -> IORef (Process Int) -> Process Person
 testProcess handle ref pref =
   Normal
     return
-    [ Sink print,
-      -- use IORef backend
-      StateFun (ioRefBackendState ref) (\_ s -> return (s + 1, s + 1)) [Sink print, Mutil pref],
+    [ -- use IORef backend
+      StateFun (ioRefBackendState ref) (\_ s -> return (s + 1, s + 1)) [Mutil pref],
       -- use file backend
-      StateFun (fileBackendState handle) (\_ s -> return (s + 1, s + 1)) [Sink print, Mutil pref]
+      StateFun (fileBackendState handle) (\_ s -> return (s + 1, s + 1)) [Mutil pref]
     ]
 
-main :: IO ()
-main = do
+main2 :: IO ()
+main2 = do
   ref <- newIORef 0
   pref <- newIORef (StateFun (ioRefBackendState ref) (\_ s -> return (s + 1, s + 1)) [Sink print])
   withFile "test_stateFile.txt" ReadWriteMode $ \handle -> do
     hSeek handle AbsoluteSeek 0 >> hPutStr handle (show 0)
     ref <- initState
     putStrLn $ render (testProcess handle ref pref)
-    forM_ (concat $ replicate 100 [Person "wang" 23 2]) $
+    forM_ (concat $ replicate 1 [Person "wang" 23 2]) $
       \v -> do
         threadDelay 10000
         runProcess v $ testProcess handle ref pref
