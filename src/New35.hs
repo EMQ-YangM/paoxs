@@ -73,10 +73,10 @@ joinWork1 a =
     [ Normal (decode @Person) [Normal l41 [Process a]],
       Normal (decode @Order) [Normal l42 [Process a]],
       Normal (decode @Result) [Normal l43 [Process a]],
-      Normal (decode @Int) [Normal l44 [Process a]]
+      Normal (decode @Double) [Normal l44 [Process a]]
     ]
 
-joinWork2 a b =
+joinWork2 a b c =
   Source
     (pollRecord b)
     [ Choise
@@ -84,7 +84,8 @@ joinWork2 a b =
         [ Normal (decode @Person) [Normal l21 [Process a]],
           Normal (decode @Order) [Normal l22 [Process a]]
         ],
-      Sink print
+      Sink print,
+      StateFun c (\_ s -> return (s + 1, s + 1)) [Sink print]
     ]
 
 joinFun :: [Person] :++ [Order] -> IO [Result]
@@ -96,21 +97,23 @@ joinFun (ps :++ os) = return $ concatMap fun ps
         x : _ -> [Result (name p) (age p) (order x)]
 
 initWork = do
+  let time = 100000
   ref <- newIORef initCache
-  tbool <- registerDelay 1000000
-  newIORef (tbool, initCache, ioRefBackendState ref, cacheFun, Normal joinFun [Sink print])
+  tbool <- registerDelay time
+  newIORef (tbool, initCache, ioRefBackendState ref, cacheFun, time, Normal joinFun [Sink print])
 
 main :: IO ()
 main = do
   ref <- initWork
   i <- newIORef 0
-  let work = joinWork2 ref i
+  countRef <- newIORef 0
+  let work = joinWork2 ref i (ioRefBackendState countRef)
   putStrLn "\n---------- process depend ----------\n\n"
   putStr $ render work
   putStrLn "............ optimize later ............ \n"
   let optWork = optimize work
   putStr $ render optWork
-  forM_ [1 .. 2] $ \_ -> do
+  forM_ [1 .. 200] $ \_ -> do
     threadDelay 10000
     run optWork
 

@@ -116,7 +116,7 @@ data Process v where
   StateFun :: State state -> StateNormalFun input output state -> [Process output] -> Process input
   Process ::
     (IC input ~ cache, initCache ~ cache) =>
-    IORef (TVar Bool, initCache, State cache, CacheFun input cache, Process cache) ->
+    IORef (TVar Bool, initCache, State cache, CacheFun input cache, Int, Process cache) ->
     Process input
   Mutil :: IORef (Process input) -> Process input
   Source :: Source output -> [Process output] -> Process ()
@@ -133,7 +133,7 @@ optimize v = v
 
 run :: Process () -> IO ()
 run (Source fun ps) = fun >>= \v -> forM_ ps (runProcess v)
-run _ = error "this is not"
+run _ = error "this is not source"
 
 runProcess :: v -> Process v -> IO ()
 runProcess v (Normal fun ps) = do
@@ -155,17 +155,17 @@ runProcess v (StateFun state stateFun ps) = do
   put state newState
   forM_ ps $ \p -> runProcess v' p
 runProcess v (Process ref) = do
-  (tvar, initCache, cache, cacheFun, p) <- readIORef ref
+  (tvar, initCache, cache, cacheFun, i, p) <- readIORef ref
   readTVarIO tvar >>= \case
     False -> do
       cacheVal <- get cache
       put cache (cacheFun v cacheVal)
-      writeIORef ref (tvar, initCache, cache, cacheFun, p)
+      writeIORef ref (tvar, initCache, cache, cacheFun, i, p)
     True -> do
-      newtvar <- registerDelay 1000000
+      newtvar <- registerDelay i
       cacheVal <- get cache
       put cache initCache
-      writeIORef ref (newtvar, initCache, cache, cacheFun, p)
+      writeIORef ref (newtvar, initCache, cache, cacheFun, i, p)
       runProcess cacheVal p
 
 ioRefBackendState :: IORef a -> State a
@@ -220,7 +220,7 @@ render' s i (Process ioref) = do
   case M.lookup index m of
     Just _ -> return ()
     Nothing -> do
-      let (_, _, _, _, p) = unsafePerformIO $ readIORef ioref
+      let (_, _, _, _, _, p) = unsafePerformIO $ readIORef ioref
       rs <- render' "" 0 p
       S.put (M.insert index ("Prosess" ++ show index ++ ": " ++ rs) m)
   return $ s ++ "Process" ++ show index ++ " \n"

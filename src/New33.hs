@@ -16,7 +16,7 @@ import Language.Haskell.TH.Syntax (liftData)
 
 q :: QuasiQuoter 
 q = QuasiQuoter {
-    quoteExp  = \s -> [| $(parseInput s) |]
+    quoteExp  = parseInput
   , quotePat = error "nice"
   , quoteType = error "nice"
   , quoteDec = error "nice"
