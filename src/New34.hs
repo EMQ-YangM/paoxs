@@ -13,12 +13,13 @@ module New34 where
 
 import Control.Monad
 import qualified Control.Monad.State as S
-import Data.IORef (IORef, readIORef, writeIORef)
+import Data.IORef (newIORef, IORef, readIORef, writeIORef)
 import Data.Map (Map)
 import qualified Data.Map as M
 import GHC.Conc (TVar, readTVarIO, registerDelay)
 import System.IO
-  ( Handle,
+  (openFile,  Handle,
+    IOMode(ReadWriteMode),
     SeekMode (AbsoluteSeek),
     hGetLine,
     hPutStr,
@@ -181,6 +182,17 @@ fileBackendState handle =
     { put = \v -> hSeek handle AbsoluteSeek 0 >> hPutStr handle (show v),
       get = hSeek handle AbsoluteSeek 0 >> hGetLine handle >>= \v -> return (read v)
     }
+
+createIORefBackend :: a -> IO (State a)
+createIORefBackend initState = do
+  ref <- newIORef initState
+  return $ ioRefBackendState ref
+
+createFileBackend :: (Show a, Read a) => String -> a -> IO (State a)
+createFileBackend name initState = do
+  handle <- openFile name ReadWriteMode
+  hPutStr handle $ show initState
+  return $ fileBackendState handle
 
 dbBackendState :: State a
 dbBackendState =

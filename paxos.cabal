@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 98127139081e31a5dd7d57ceae71ee0de8e0c8cb46c42cc34e5e31d489fa3213
+-- hash: 3c5d06554c6e9bb1218e656780d75a10c814d28c9b4dbbc74076be66e92769aa
 
 name:           paxos
 version:        0.1.0.0
@@ -56,6 +56,7 @@ library
       New32
       New33
       New34
+      New341
       New35
       New36
       New37

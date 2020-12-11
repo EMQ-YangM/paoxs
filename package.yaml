@@ -57,6 +57,7 @@ dependencies:
 - microlens-th
 - optics
 - optics-th
+- serialise
 
 library:
   source-dirs: src

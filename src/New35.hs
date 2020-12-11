@@ -1,13 +1,37 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 
+-- {-# ghc -Wno-typed-holes #-}
+
 module New35 where
 
+import Codec.Serialise (Serialise, deserialise, serialise)
 import Control.Monad
-import Data.IORef
+import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import GHC.Conc
+import GHC.Generics (Generic)
 import New34
+  ( Process (Choise, Mutil, Normal, Process, Sink, Source, StateFun),
+    cache2,
+    fileBackendState,
+    ioRefBackendState,
+    l21,
+    l22,
+    l41,
+    l42,
+    l43,
+    l44,
+    optimize,
+    render,
+    run,
+    runProcess,
+    type (:++) (..),
+  )
 import System.IO
   ( Handle,
     IOMode (ReadWriteMode),
@@ -15,6 +39,7 @@ import System.IO
     hClose,
     hPutStr,
     hSeek,
+    openFile,
     withFile,
   )
 
@@ -24,12 +49,20 @@ data Person = Person
     pid :: Int
   }
   deriving (Show, Eq, Read)
+  deriving stock (Generic)
+  deriving anyclass (Serialise)
+
+tval = serialise (Person "yang" 23 1001)
+
+rtval = deserialise (tval <> "bbb") :: Person
 
 data Order = Order
   { order :: Int,
     personId :: Int
   }
   deriving (Show, Eq, Read)
+  deriving stock (Generic)
+  deriving anyclass (Serialise)
 
 data Result = Result
   { personName :: String,
@@ -153,13 +186,14 @@ main2 :: IO ()
 main2 = do
   ref <- newIORef 0
   pref <- newIORef (StateFun (ioRefBackendState ref) (\_ s -> return (s + 1, s + 1)) [Sink print])
-  withFile "test_stateFile.txt" ReadWriteMode $ \handle -> do
-    hSeek handle AbsoluteSeek 0 >> hPutStr handle (show 0)
-    ref <- initState
-    putStrLn $ render (testProcess handle ref pref)
-    forM_ (concat $ replicate 1 [Person "wang" 23 2]) $
-      \v -> do
-        threadDelay 10000
-        runProcess v $ testProcess handle ref pref
-    print "close handle"
-    hClose handle
+  handle <- openFile "test_stateFile.txt" ReadWriteMode
+  hSeek handle AbsoluteSeek 0 >> hPutStr handle "       "
+  hSeek handle AbsoluteSeek 0 >> hPutStr handle (show 0)
+  ref <- initState
+  putStrLn $ render (testProcess handle ref pref)
+  forM_ (concat $ replicate 3 [Person "wang" 23 2]) $
+    \v -> do
+      threadDelay 10000
+      runProcess v $ testProcess handle ref pref
+  putStrLn "close handle"
+  hClose handle
